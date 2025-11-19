@@ -26,6 +26,8 @@ type ApiCtx struct {
 	ft          *filetree.FileTreeCtx
 	blobStorage *BlobStorage
 	hashTree    *HashTree
+	syncId      string
+	batchNumber int
 }
 
 // max number of concurrent requests
@@ -51,7 +53,8 @@ func CreateCtx(http *transport.HttpClientCtx) (*ApiCtx, error) {
 	}
 	saveTree(cacheTree)
 	tree := DocumentsFileTree(cacheTree)
-	return &ApiCtx{http, tree, apiStorage, cacheTree}, nil
+	syncId := uuid.New().String()
+	return &ApiCtx{http, tree, apiStorage, cacheTree, syncId, 1}, nil
 }
 
 func (ctx *ApiCtx) Filetree() *filetree.FileTreeCtx {
@@ -131,6 +134,8 @@ func (ctx *ApiCtx) FetchDocument(docId, dstPath string) error {
 // CreateDir creates a remote directory with a given name under the parentId directory
 func (ctx *ApiCtx) CreateDir(parentId, name string, notify bool) (*model.Document, error) {
 	var err error
+	ctx.blobStorage.SetSyncInfo(ctx.syncId, ctx.batchNumber)
+	defer func() { ctx.batchNumber++ }()
 
 	files := &archive.DocumentFiles{}
 
@@ -278,6 +283,9 @@ func (ctx *ApiCtx) DeleteEntry(node *model.Node, recursive, notify bool) error {
 // - dstDir is an existing destination directory
 // - name is the new name of the moved entry in the destination directory
 func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node, error) {
+	ctx.blobStorage.SetSyncInfo(ctx.syncId, ctx.batchNumber)
+	defer func() { ctx.batchNumber++ }()
+
 	if dstDir.IsFile() {
 		return nil, errors.New("destination directory is a file")
 	}
@@ -336,6 +344,9 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
 func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify bool, coverpage *int) (*model.Document, error) {
+	ctx.blobStorage.SetSyncInfo(ctx.syncId, ctx.batchNumber)
+	defer func() { ctx.batchNumber++ }()
+
 	//TODO: overwrite file
 	name, ext := util.DocPathToName(sourceDocPath)
 
@@ -414,6 +425,9 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 // identified by docId with the local file given by sourceDocPath. Metadata and annotations
 // remain untouched.
 func (ctx *ApiCtx) ReplaceDocumentFile(docId, sourceDocPath string, notify bool) error {
+	ctx.blobStorage.SetSyncInfo(ctx.syncId, ctx.batchNumber)
+	defer func() { ctx.batchNumber++ }()
+
 	_, ext := util.DocPathToName(sourceDocPath)
 	return Sync(ctx.blobStorage, ctx.hashTree, func(t *HashTree) error {
 		doc, err := t.FindDoc(docId)

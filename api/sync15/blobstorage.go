@@ -13,6 +13,8 @@ import (
 type BlobStorage struct {
 	http        *transport.HttpClientCtx
 	concurrency int
+	syncId      string
+	batchNumber int
 }
 
 func NewBlobStorage(http *transport.HttpClientCtx) *BlobStorage {
@@ -25,10 +27,20 @@ func (b *BlobStorage) GetReader(hash, filename string) (io.ReadCloser, error) {
 	return b.http.GetStream(transport.UserBearer, config.BlobUrl+hash, filename)
 }
 
+func (b *BlobStorage) SetSyncInfo(syncId string, batchNumber int) {
+	b.syncId = syncId
+	b.batchNumber = batchNumber
+}
+
 func (b *BlobStorage) UploadBlob(hash, filename string, reader io.Reader) error {
 	log.Trace.Println("uploading blob ", filename)
 
-	return b.http.PutStream(transport.UserBearer, config.BlobUrl+hash, reader, filename)
+	headers := map[string]string{}
+	if b.syncId != "" {
+		headers[transport.RmSyncIdHeader] = b.syncId
+		headers[transport.RmBatchNumberHeader] = fmt.Sprintf("%d", b.batchNumber)
+	}
+	return b.http.PutStream(transport.UserBearer, config.BlobUrl+hash, reader, filename, headers)
 }
 
 // SyncComplete no longer used

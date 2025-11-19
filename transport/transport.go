@@ -89,6 +89,8 @@ func (ctx HttpClientCtx) Get(authType AuthType, url string, body interface{}, ta
 }
 
 const RmFileNameHeader = "rm-filename"
+const RmSyncIdHeader = "rm-sync-id"
+const RmBatchNumberHeader = "rm-batch-number"
 
 func (ctx HttpClientCtx) GetStream(authType AuthType, url string, name string) (io.ReadCloser, error) {
 	headers := map[string]string{
@@ -109,9 +111,12 @@ func (ctx HttpClientCtx) Put(authType AuthType, url string, reqBody, resp interf
 	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody, resp, headers)
 }
 
-func (ctx HttpClientCtx) PutStream(authType AuthType, url string, reqBody io.Reader, name string) error {
+func (ctx HttpClientCtx) PutStream(authType AuthType, url string, reqBody io.Reader, name string, extraHeaders map[string]string) error {
 	headers := map[string]string{
 		RmFileNameHeader: name,
+	}
+	for k, v := range extraHeaders {
+		headers[k] = v
 	}
 	return ctx.httpRawReq(authType, http.MethodPut, url, reqBody, nil, headers)
 }
