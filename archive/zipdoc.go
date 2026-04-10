@@ -144,7 +144,7 @@ func CreateZipDocument(id, srcPath string) (zipPath string, err error) {
 		return
 	}
 
-	c, err := createZipContent(fileType, pages, nil)
+	c, err := createZipContent(fileType, pages, nil, nil, nil, nil)
 	if err != nil {
 		return
 	}
@@ -179,7 +179,7 @@ func CreateZipDirectory(id string) (string, error) {
 	return tmp.Name(), nil
 }
 
-func createZipContent(ext string, pageIDs []string, coverpage *int) (string, error) {
+func createZipContent(ext string, pageIDs []string, coverpage *int, currentPage *int, pageCount *int, contrastFilter *string) (string, error) {
 	c := Content{
 		DummyDocument: false,
 		ExtraMetadata: ExtraMetadata{
@@ -204,8 +204,15 @@ func createZipContent(ext string, pageIDs []string, coverpage *int) (string, err
 			M32: 0,
 			M33: 1,
 		},
-		Pages:           pageIDs,
-		CoverPageNumber: coverpage,
+		Pages:                pageIDs,
+		CoverPageNumber:      coverpage,
+		ViewBackgroundFilter: contrastFilter,
+	}
+	if currentPage != nil {
+		c.LastOpenedPage = *currentPage
+	}
+	if pageCount != nil {
+		c.PageCount = *pageCount
 	}
 
 	cstring, err := json.Marshal(c)
@@ -218,13 +225,13 @@ func createZipContent(ext string, pageIDs []string, coverpage *int) (string, err
 	return string(cstring), nil
 }
 
-func CreateContent(id, ext, fpath string, pageIds []string, coverpage *int) (fileName, filePath string, err error) {
+func CreateContent(id, ext, fpath string, pageIds []string, coverpage *int, currentPage *int, pageCount *int, contrastFilter *string) (fileName, filePath string, err error) {
 	fileName = id + "." + string(ContentExt)
 	filePath = path.Join(fpath, fileName)
 	content := "{}"
 
 	if ext != "" {
-		content, err = createZipContent(ext, pageIds, coverpage)
+		content, err = createZipContent(ext, pageIds, coverpage, currentPage, pageCount, contrastFilter)
 		if err != nil {
 			return
 		}
@@ -240,7 +247,7 @@ func UnixTimestamp() string {
 	return tf
 }
 
-func CreateMetadata(id, name, parent, colType, fpath string) (fileName string, filePath string, err error) {
+func CreateMetadata(id, name, parent, colType, fpath string, currentPage *int) (fileName string, filePath string, err error) {
 	fileName = id + "." + string(MetadataExt)
 	filePath = path.Join(fpath, fileName)
 	meta := MetadataFile{
@@ -250,6 +257,9 @@ func CreateMetadata(id, name, parent, colType, fpath string) (fileName string, f
 		Parent:         parent,
 		Synced:         true,
 		LastModified:   UnixTimestamp(),
+	}
+	if currentPage != nil {
+		meta.LastOpenedPage = *currentPage
 	}
 
 	c, err := json.Marshal(meta)

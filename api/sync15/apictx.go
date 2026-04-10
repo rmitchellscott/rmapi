@@ -139,13 +139,13 @@ func (ctx *ApiCtx) CreateDir(parentId, name string, notify bool) (*model.Documen
 		return nil, err
 	}
 	id := uuid.New().String()
-	objectName, filePath, err := archive.CreateMetadata(id, name, parentId, model.DirectoryType, tmpDir)
+	objectName, filePath, err := archive.CreateMetadata(id, name, parentId, model.DirectoryType, tmpDir, nil)
 	if err != nil {
 		return nil, err
 	}
 	files.AddMap(objectName, filePath, archive.MetadataExt)
 
-	objectName, filePath, err = archive.CreateContent(id, "", tmpDir, nil, nil)
+	objectName, filePath, err = archive.CreateContent(id, "", tmpDir, nil, nil, nil, nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +335,7 @@ func (ctx *ApiCtx) MoveEntry(src, dstDir *model.Node, name string) (*model.Node,
 }
 
 // UploadDocument uploads a local document given by sourceDocPath under the parentId directory
-func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify bool, coverpage *int) (*model.Document, error) {
+func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify bool, coverpage *int, currentPage *int, pageCount *int, contrastFilter *string) (*model.Document, error) {
 	//TODO: overwrite file
 	name, ext := util.DocPathToName(sourceDocPath)
 
@@ -356,7 +356,7 @@ func (ctx *ApiCtx) UploadDocument(parentId string, sourceDocPath string, notify 
 
 	defer os.RemoveAll(tmpDir)
 
-	docFiles, id, err := archive.Prepare(name, parentId, sourceDocPath, ext, tmpDir, coverpage)
+	docFiles, id, err := archive.Prepare(name, parentId, sourceDocPath, ext, tmpDir, coverpage, currentPage, pageCount, contrastFilter)
 	if err != nil {
 		return nil, err
 	}
