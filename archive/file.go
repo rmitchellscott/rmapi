@@ -120,7 +120,8 @@ type Content struct {
 	DocumentTags    []Tag     `json:"tags"`
 	RedirectionMap  []int     `json:"redirectionPageMap"`
 	TextScale       float64   `json:"textScale"`
-	CoverPageNumber *int      `json:"coverPageNumber,omitempty"`
+	CoverPageNumber      *int    `json:"coverPageNumber,omitempty"`
+	ViewBackgroundFilter *string `json:"viewBackgroundFilter,omitempty"`
 
 	Transform *Transform `json:"-"`
 }

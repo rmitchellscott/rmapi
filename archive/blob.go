@@ -47,7 +47,7 @@ func (d *DocumentFiles) AddMap(name, filepath string, filetype RmExt) {
 }
 
 // Prepare prepares a file for uploading (creates needed temp files or unpacks a zip)
-func Prepare(name, parentId, sourceDocPath, ext, tmpDir string, coverpage *int) (files *DocumentFiles, id string, err error) {
+func Prepare(name, parentId, sourceDocPath, ext, tmpDir string, coverpage *int, currentPage *int, pageCount *int, contrastFilter *string) (files *DocumentFiles, id string, err error) {
 	files = &DocumentFiles{}
 	if ext == util.ZIP || ext == util.RMDOC {
 		var metadataPath string
@@ -60,7 +60,7 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string, coverpage *int) 
 		}
 		if metadataPath == "" {
 			log.Warning.Println("missing metadata, creating...", name)
-			objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir)
+			objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir, currentPage)
 			if err1 != nil {
 				err = err1
 				return
@@ -84,14 +84,14 @@ func Prepare(name, parentId, sourceDocPath, ext, tmpDir string, coverpage *int) 
 			pageIds = []string{pageId}
 		}
 		files.AddMap(objectName, sourceDocPath, RmExt(doctype))
-		objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir)
+		objectName, filePath, err1 := CreateMetadata(id, name, parentId, model.DocumentType, tmpDir, currentPage)
 		if err1 != nil {
 			err = err1
 			return
 		}
 		files.AddMap(objectName, filePath, MetadataExt)
 
-		objectName, filePath, err = CreateContent(id, doctype, tmpDir, pageIds, coverpage)
+		objectName, filePath, err = CreateContent(id, doctype, tmpDir, pageIds, coverpage, currentPage, pageCount, contrastFilter)
 		if err != nil {
 			return
 		}
