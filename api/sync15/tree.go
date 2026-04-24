@@ -155,7 +155,7 @@ func (t *HashTree) IndexReader() (io.Reader, error) {
 
 	schemaVersion := t.SchemaVersion
 	if schemaVersion == "" {
-		schemaVersion = SchemaVersionV3
+		schemaVersion = SchemaVersionV4
 	}
 
 	if envSchema := os.Getenv("RMAPI_FORCE_SCHEMA_VERSION"); envSchema != "" {
@@ -230,7 +230,7 @@ func (t *HashTree) Remove(id string) error {
 func (t *HashTree) Rehash() error {
 	schemaVersion := t.SchemaVersion
 	if schemaVersion == "" {
-		schemaVersion = SchemaVersionV3
+		schemaVersion = SchemaVersionV4
 	}
 
 	if envSchema := os.Getenv("RMAPI_FORCE_SCHEMA_VERSION"); envSchema != "" {
